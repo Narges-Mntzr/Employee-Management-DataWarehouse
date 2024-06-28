@@ -14,6 +14,8 @@ CREATE TABLE Projects (
     StartDate DATE,
     EndDate DATE,
     Status CHAR(20) NOT NULL CHECK (Status IN ('In Progress', 'Completed')),
+    Advisor INT,
+    FOREIGN KEY (Advisor) REFERENCES Employees(EmployeeID)
 );
 
 -- Departments Table

@@ -65,6 +65,7 @@ for i in range(1, 201):  # 200 projects
             start_date.strftime("%Y-%m-%d"),
             end_date.strftime("%Y-%m-%d") if end_date else None,
             status,
+            random.choice([None] + [i for i in range(1, 1001)]),
         )
     )
 
@@ -127,11 +128,6 @@ for i in range(1, 1000001):  # 1,000,000 time entries
 # Insert data into tables
 print("Start inserting data into tables...")
 
-cursor.executemany(
-    "INSERT INTO Projects (ProjectName, Description, StartDate, EndDate, Status) VALUES (?, ?, ?, ?, ?)",
-    projects,
-)
-print("Table Projects inserted successfully.")
 
 cursor.executemany(
     "INSERT INTO Departments (Name, MaxEmployeeSize) VALUES (?, ?)", departments
@@ -147,6 +143,11 @@ cursor.executemany(
 )
 print("Table Employees inserted successfully.")
 
+cursor.executemany(
+    "INSERT INTO Projects (ProjectName, Description, StartDate, EndDate, Status, Advisor) VALUES (?, ?, ?, ?, ?, ?)",
+    projects,
+)
+print("Table Projects inserted successfully.")
 
 # Batch insert tasks and time entries due to their large size
 batch_size = 10000
