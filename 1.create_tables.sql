@@ -6,18 +6,6 @@
 USE EmployeeManagement;
 GO
 
--- Projects Table
-CREATE TABLE Projects (
-    ProjectID INT IDENTITY(1,1) PRIMARY KEY,
-    ProjectName NVARCHAR(100),
-    Description NVARCHAR(MAX),
-    StartDate DATE,
-    EndDate DATE,
-    Status CHAR(20) NOT NULL CHECK (Status IN ('In Progress', 'Completed')),
-    Advisor INT,
-    FOREIGN KEY (Advisor) REFERENCES Employees(EmployeeID)
-);
-
 -- Departments Table
 CREATE TABLE Departments (
     DepartmentID INT IDENTITY(1,1) PRIMARY KEY,
@@ -46,6 +34,18 @@ CREATE TABLE Employees (
     BirthCity INT,
     FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID),
     FOREIGN KEY (BirthCity) REFERENCES Cities(CityID)
+);
+
+-- Projects Table
+CREATE TABLE Projects (
+    ProjectID INT IDENTITY(1,1) PRIMARY KEY,
+    ProjectName NVARCHAR(100),
+    Description NVARCHAR(MAX),
+    StartDate DATE,
+    EndDate DATE,
+    Status CHAR(20) NOT NULL CHECK (Status IN ('In Progress', 'Completed')),
+    Advisor INT,
+    FOREIGN KEY (Advisor) REFERENCES Employees(EmployeeID)
 );
 
 -- Tasks Table
