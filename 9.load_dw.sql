@@ -7,8 +7,8 @@ BEGIN
     DECLARE @TmpRowCount INT;
     DECLARE @DimRowCount INT;
 
-    SELECT @TmpRowCount = COUNT(*) FROM DW_EmployeeManagement.dbo.Tmp_Dim_Employees;
-    SELECT @DimRowCount = COUNT(*) FROM DW_EmployeeManagement.dbo.Dim_Employees;
+    SELECT @TmpRowCount = COUNT(1) FROM DW_EmployeeManagement.dbo.Tmp_Dim_Employees;
+    SELECT @DimRowCount = COUNT(1) FROM DW_EmployeeManagement.dbo.Dim_Employees;
 
     IF @TmpRowCount > 0 AND @DimRowCount = 0
     BEGIN
@@ -30,7 +30,7 @@ BEGIN
                     DepartmentMaxEmployeeSize, Birthday, PhoneNumber, StartDate, EndDate, BirthCityID, BirthCityName, BirthCityCountry, 
                     SCD_StartDate, SCD_EndDate, SCD_Flag)
     SELECT 
-        e.EmployeeID, e.FirstName, e.LastName, e.Gender, e.DepartmentID, d.DepartmentName, d.DepartmentMaxEmployeeSize, 
+        e.EmployeeID, e.FirstName, e.LastName, e.Gender, e.DepartmentID, d.Name, d.MaxEmployeeSize, 
         e.Birthday, e.PhoneNumber, e.StartDate, e.EndDate, e.BirthCity, c.Name, c.Country, 
         GETDATE(), NULL, 1
     FROM Staging_EmployeeManagement.dbo.Employees e
@@ -75,8 +75,8 @@ BEGIN
     DECLARE @TmpRowCount INT;
     DECLARE @DimRowCount INT;
 
-    SELECT @TmpRowCount = COUNT(*) FROM DW_EmployeeManagement.dbo.Tmp_Dim_Projects;
-    SELECT @DimRowCount = COUNT(*) FROM DW_EmployeeManagement.dbo.Dim_Projects;
+    SELECT @TmpRowCount = COUNT(1) FROM DW_EmployeeManagement.dbo.Tmp_Dim_Projects;
+    SELECT @DimRowCount = COUNT(1) FROM DW_EmployeeManagement.dbo.Dim_Projects;
 
     IF @TmpRowCount > 0 AND @DimRowCount = 0
     BEGIN
@@ -172,7 +172,7 @@ BEGIN
     BEGIN    
         INSERT INTO DW_EmployeeManagement.dbo.Fact_Daily (Date, ProjectID, EmployeeID, TaskNum, SumHours, NumberOfDays, NumberOfConsecutiveFreeDays)
         SELECT 
-            ft.EntryDate, ft.ProjectID, ft.EmployeeID, cnt(1), 
+            ft.EntryDate, ft.ProjectID, ft.EmployeeID, COUNT(1), 
             sum(HoursWorked), DATEDIFF(day, ft.EntryDate, p.StartDate), 
             DATEDIFF(day, DATEADD(DAY, -1, ft.EntryDate), 
                     (SELECT TOP 1 EntryDate 
@@ -183,7 +183,7 @@ BEGIN
         FROM DW_EmployeeManagement.dbo.Fact_Transactions ft
         JOIN Staging_EmployeeManagement.dbo.Projects p ON p.ProjectID=ft.ProjectID
         WHERE ft.EntryDate=@CurrentDate
-        GROUP BY ft.EntryDate, ft.ProjectID, ft.EmployeeID;
+        GROUP BY ft.EntryDate, ft.ProjectID, ft.EmployeeID, p.StartDate;
 
         SET @CurrentDate = DATEADD(DAY, 1, @CurrentDate);
     END
@@ -195,9 +195,9 @@ AS
 BEGIN
     TRUNCATE TABLE DW_EmployeeManagement.dbo.Fact_ACC;
 
-    INSERT INTO DW_EmployeeManagement.dbo.Fact_ACC (ProjectID, EmployeeID, TaskNum, SumHours, NumberOfDays, NumberOfConsecutiveFreeDays)
+    INSERT INTO DW_EmployeeManagement.dbo.Fact_ACC (ProjectID, EmployeeID, ProjectStatus, TotalTaskNum, TotalHours, NumberOfDays, NumberOfConsecutiveFreeDays)
     SELECT 
-        ft.ProjectID, ft.EmployeeID, cnt(1), 
+        ft.ProjectID, ft.EmployeeID, p.status, COUNT(1), 
         sum(HoursWorked), DATEDIFF(day, GETDATE(), p.StartDate), 
         DATEDIFF(day, DATEADD(DAY, -1, GETDATE()), 
                 (SELECT TOP 1 EntryDate 
@@ -207,7 +207,7 @@ BEGIN
         )
     FROM DW_EmployeeManagement.dbo.Fact_Transactions ft
     JOIN Staging_EmployeeManagement.dbo.Projects p ON p.ProjectID=ft.ProjectID
-    GROUP BY ft.ProjectID, ft.EmployeeID;
+    GROUP BY ft.ProjectID, ft.EmployeeID, p.status;
 END;
 GO
 
@@ -237,13 +237,13 @@ BEGIN
     SELECT
         p.ProjectID, p.Advisor, 1
     FROM Staging_EmployeeManagement.dbo.Projects p
-    GROUP BY ft.ProjectID, ft.EmployeeID;
+    GROUP BY p.ProjectID, p.Advisor;
 
     TRUNCATE TABLE DW_EmployeeManagement.dbo.Factless;
 
     INSERT INTO DW_EmployeeManagement.dbo.Factless (ProjectID, EmployeeID, Role)
     SELECT
-        ProjectID, Advisor, Role
+        ProjectID, EmployeeID, Role
     FROM DW_EmployeeManagement.dbo.Tmp_Factless 
 END;
 GO

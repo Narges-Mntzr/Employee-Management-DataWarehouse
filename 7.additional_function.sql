@@ -79,7 +79,7 @@ RETURN
 GO
 
 -- Example function to get Shamsi weekday name
-CREATE FUNCTION dbo.GetShamsiWeekDay(@EnglishWeekday DATE)
+CREATE FUNCTION dbo.GetShamsiWeekDay(@EnglishWeekday NVARCHAR(10))
 RETURNS NVARCHAR(10)
 AS
 BEGIN
@@ -101,4 +101,5 @@ END;
 GO
 
 -- Usage of functions
-SELECT * FROM dbo.ToShamsiDate('2020-10-22') --output: 1399-08-01
+SELECT * FROM dbo.ToShamsiDate('2020-10-22'); --output: 1399-08-01
+SELECT dbo.GetShamsiWeekDay(DATENAME(WEEKDAY, '2020-10-22')) AS result; --output: پنجشنبه

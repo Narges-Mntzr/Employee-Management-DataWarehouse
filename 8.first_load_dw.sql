@@ -4,14 +4,14 @@ GO
 CREATE PROCEDURE First_Load_Dim_Employees
 AS
 BEGIN
-    TRUNCATE TABLE DW_EmployeeManagement.dbo.Dim_Employees;
+    TRUNCATE TABLE DW_EmployeeManagement.dbo.Dim_Employees
 
     INSERT INTO DW_EmployeeManagement.dbo.Dim_Employees (EmployeeID, FirstName, LastName, Gender, DepartmentID, DepartmentName,
                     DepartmentMaxEmployeeSize, Birthday, PhoneNumber, StartDate, EndDate, BirthCityID, BirthCityName, BirthCityCountry, 
                     SCD_StartDate, SCD_EndDate, SCD_Flag)
     VALUES 
-        (-1, "Unknown", "Unknown", "Unknown", -1, "Unknown", 0, 
-        GETDATE(), 0, GETDATE(), NULL, -1, "Unknown", "Unknown", 
+        (-1, 'Unknown', 'Unknown', 'Unknown', -1, 'Unknown', 0, 
+        GETDATE(), 0, GETDATE(), NULL, -1, 'Unknown', 'Unknown', 
         GETDATE(), NULL, 1)
 END;
 GO
@@ -19,7 +19,7 @@ GO
 CREATE PROCEDURE First_Load_Dim_Date
 AS
 BEGIN
-    TRUNCATE TABLE DW_EmployeeManagement.dbo.Dim_Date;
+    TRUNCATE TABLE DW_EmployeeManagement.dbo.Dim_Date
 
     DECLARE @CurrentDate DATE = '2020-01-01';
     DECLARE @EndDate DATE = '2025-01-01';
@@ -33,7 +33,7 @@ BEGIN
         DECLARE @WeekDay NVARCHAR(10) = DATENAME(WEEKDAY, @CurrentDate);
         
         -- Shamsi (Persian) date conversion (assumes a function called dbo.ToShamsiDate exists)
-        DECLARE @ShamsiDate NVARCHAR(10) = dbo.ToShamsiDate(@CurrentDate); 
+        DECLARE @ShamsiDate NVARCHAR(10) = (SELECT * FROM dbo.ToShamsiDate(@CurrentDate)); 
         DECLARE @ShamsiYear INT = CAST(SUBSTRING(@ShamsiDate, 1, 4) AS INT);
         DECLARE @ShamsiMonth INT = CAST(SUBSTRING(@ShamsiDate, 6, 2) AS INT);
         DECLARE @ShamsiDay INT = CAST(SUBSTRING(@ShamsiDate, 9, 2) AS INT);
@@ -61,8 +61,8 @@ BEGIN
     INSERT INTO DW_EmployeeManagement.dbo.Dim_Projects (ProjectID, CurrentProjectName, OriginalProjectName, Description, StartDate, 
                     EndDate, Status, Advisor)
     VALUES 
-        (-1, "Unknown", "Unknown", "Unknown", GETDATE(), 
-        GETDATE(), "Unknown", -1)
+        (-1, 'Unknown', 'Unknown', 'Unknown', GETDATE(), 
+        GETDATE(), 'Unknown', -1)
 END;
 GO
 
@@ -73,7 +73,7 @@ BEGIN
     
     INSERT INTO DW_EmployeeManagement.dbo.Dim_Tasks (TaskID, TaskName, ProjectID, AssignedTo, StartDate, EndDate)
     VALUES 
-        (-1, "Unknown", -1, -1, GETDATE(), GETDATE())
+        (-1, 'Unknown', -1, -1, GETDATE(), GETDATE())
 END;
 GO
 
@@ -84,8 +84,8 @@ BEGIN
     
     INSERT INTO DW_EmployeeManagement.dbo.Dim_Roles (RoleID, Name)
     VALUES 
-        (1,"Advisor"),
-        (2, "Worker")
+        (1,'Advisor'),
+        (2, 'Worker')
 END;
 GO
 
@@ -114,7 +114,7 @@ BEGIN
     BEGIN    
         INSERT INTO DW_EmployeeManagement.dbo.Fact_Daily (Date, ProjectID, EmployeeID, TaskNum, SumHours, NumberOfDays, NumberOfConsecutiveFreeDays)
         SELECT 
-            ft.EntryDate, ft.ProjectID, ft.EmployeeID, cnt(1), 
+            ft.EntryDate, ft.ProjectID, ft.EmployeeID, COUNT(1), 
             sum(HoursWorked), DATEDIFF(day, ft.EntryDate, p.StartDate), 
             DATEDIFF(day, DATEADD(DAY, -1, ft.EntryDate), 
                     (SELECT TOP 1 EntryDate 
@@ -125,7 +125,7 @@ BEGIN
         FROM DW_EmployeeManagement.dbo.Fact_Transactions ft
         JOIN Staging_EmployeeManagement.dbo.Projects p ON p.ProjectID=ft.ProjectID
         WHERE ft.EntryDate=@CurrentDate
-        GROUP BY ft.EntryDate, ft.ProjectID, ft.EmployeeID;
+        GROUP BY ft.EntryDate, ft.ProjectID, ft.EmployeeID, p.StartDate
 
         SET @CurrentDate = DATEADD(DAY, 1, @CurrentDate);
     END
@@ -135,11 +135,11 @@ GO
 CREATE PROCEDURE First_Load_Fact_ACC
 AS
 BEGIN
-    TRUNCATE TABLE DW_EmployeeManagement.dbo.Fact_ACC;
+    TRUNCATE TABLE DW_EmployeeManagement.dbo.Fact_ACC
 
-    INSERT INTO DW_EmployeeManagement.dbo.Fact_ACC (ProjectID, EmployeeID, TaskNum, SumHours, NumberOfDays, NumberOfConsecutiveFreeDays)
+    INSERT INTO DW_EmployeeManagement.dbo.Fact_ACC (ProjectID, EmployeeID, ProjectStatus, TotalTaskNum, TotalHours, NumberOfDays, NumberOfConsecutiveFreeDays)
     SELECT 
-        ft.ProjectID, ft.EmployeeID, cnt(1), 
+        ft.ProjectID, ft.EmployeeID, p.status, COUNT(1), 
         sum(HoursWorked), DATEDIFF(day, GETDATE(), p.StartDate), 
         DATEDIFF(day, DATEADD(DAY, -1, GETDATE()), 
                 (SELECT TOP 1 EntryDate 
@@ -149,7 +149,7 @@ BEGIN
         )
     FROM DW_EmployeeManagement.dbo.Fact_Transactions ft
     JOIN Staging_EmployeeManagement.dbo.Projects p ON p.ProjectID=ft.ProjectID
-    GROUP BY ft.ProjectID, ft.EmployeeID;
+    GROUP BY ft.ProjectID, ft.EmployeeID, p.status, p.StartDate;
 END;
 GO
 
